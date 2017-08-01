@@ -12,7 +12,7 @@ import (
 
 const (
 	apiUrl    = "https://api.instagram.com/v1/"
-	version   = "1.0.0-alpha1"
+	version   = "1.0.0-alpha2"
 	userAgent = "gostagram/v1"
 )
 

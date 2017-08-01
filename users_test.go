@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	clientSecret = "94637a21fdab42dca158c6f6bd1fbe19"
-	accessToken  = "2451237325.e0f323b.e8ab7baadad945e0856bebcae2032127"
+	clientSecret = ""
+	accessToken  = ""
 )
 
 func GetAccessTokenFromEnv() string {
