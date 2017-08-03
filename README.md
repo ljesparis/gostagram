@@ -12,7 +12,8 @@
 
 ---
 
-Currently gostagram is in alpha release as you may know, it's not stable, assume your risk.
+**Warning!**
+gostagram is in alpha release, is not stable. Use it on your own risk.
 
 ### Quick Start.
 
