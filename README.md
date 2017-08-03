@@ -12,6 +12,8 @@
 
 ---
 
+Currently gostagram is in alpha release as you may know, it's not stable, assume your risk.
+
 ### Quick Start.
 
 **First step**
