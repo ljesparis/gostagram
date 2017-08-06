@@ -3,40 +3,25 @@ package gostagram
 import "testing"
 
 func TestClient_GetMediaLikes(t *testing.T) {
+	FatalIfEmptyString(media_id, "media id cannot be empty.", t)
 	client := CreateClient(t)
-	users, err := client.GetMediaLikes("1499806890266583125_2451237325")
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(users) > 0 {
-		for _, user := range users {
-			t.Log("------------------ Start User ------------------")
-			LogUser(user, t)
-			t.Log("------------------ End User ------------------")
-		}
-	} else {
-		t.Log("Not found any user.!")
-	}
+	users, err := client.GetMediaLikes(media_id)
+	PanicIfError(err, t)
+	IterateUsers(users, t)
 }
 
 func TestClient_PostMediaLike(t *testing.T) {
+	FatalIfEmptyString(media_id, "media id cannot be empty.", t)
 	client := CreateClient(t)
-	err := client.PostMediaLike("1499806890266583125_2451237325")
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	err := client.PostMediaLike(media_id)
+	PanicIfError(err, t)
 	t.Log("media photo liked.")
 }
 
 func TestClient_DeleteMediaLike(t *testing.T) {
+	FatalIfEmptyString(media_id, "media id cannot be empty.", t)
 	client := CreateClient(t)
-	err := client.DeleteMediaLike("1499806890266583125_2451237325")
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	err := client.DeleteMediaLike(media_id)
+	PanicIfError(err, t)
 	t.Log("media photo disliked.")
 }
