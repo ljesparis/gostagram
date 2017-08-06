@@ -6,7 +6,11 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-type MediaType         uint8
+// Represents every media file's type,
+// normaly used to differentiate video, image and
+// carousel resources from a
+// Media interface array ([]Media).
+type MediaType uint8
 
 func (mt MediaType) IsImage() bool {
 	return mt == imageMediaType
@@ -26,6 +30,9 @@ const (
 	carouselMediaType MediaType = 3
 )
 
+// Media is a generic interface that represents
+// all valid instagram media resources
+// (Images, videos and carousel images).
 type Media interface {
 	MediaType() MediaType
 }
@@ -42,6 +49,9 @@ type VideoResolution struct {
 	Height int
 }
 
+// BaseMediaResource represent all
+// attributes that all media resources
+// may has.
 type BaseMediaResource struct {
 	Id          string
 	Type        string
@@ -50,16 +60,16 @@ type BaseMediaResource struct {
 	CreatedTime string `mapstructure:"created_time"`
 
 	User         User
-	UserHasLiked bool  `mapstructure:"user_has_liked"`
+	UserHasLiked bool `mapstructure:"user_has_liked"`
 	Attribution  interface{}
-	Tags         []interface{}
+	Tags         []string
 
 	UserInPhoto []struct {
 		User User
 
 		Position struct {
-			X float64
-			Y float64
+			X int
+			Y int
 		}
 	} `mapstructure:"user_in_photo"`
 
@@ -124,7 +134,7 @@ func (mi MediaCarousel) MediaType() MediaType {
 	return carouselMediaType
 }
 
-func (c *Client) getMedia(uri string) ([]*Media, error) {
+func (c Client) getMedia(uri string) ([]*Media, error) {
 	tmp, _, err := c.get(uri)
 
 	if err != nil {
@@ -132,6 +142,9 @@ func (c *Client) getMedia(uri string) ([]*Media, error) {
 	}
 
 	var tmpMediaArray []interface{}
+
+	// checking if media response is an
+	// interface array or a map of interfaces.
 	switch (*tmp).(type) {
 	case []interface{}:
 		tmpMediaArray = (*tmp).([]interface{})
@@ -145,6 +158,9 @@ func (c *Client) getMedia(uri string) ([]*Media, error) {
 	for _, tmpMedia := range tmpMediaArray {
 		tmp := tmpMedia.(map[string]interface{})
 		mediaType := tmp["type"].(string)
+
+		// check what kind of media resource,
+		// was returned. (video, image or carousel image.)
 		if mediaType == "image" {
 			if tmp["carousel_media"] != nil {
 
@@ -173,7 +189,7 @@ func (c *Client) getMedia(uri string) ([]*Media, error) {
 	return media_array, nil
 }
 
-func (c *Client) getOnlyOneMediaContent(uri string) (*Media, error) {
+func (c Client) getOnlyOneMediaContent(uri string) (*Media, error) {
 	media, err := c.getMedia(uri)
 	if err != nil {
 		return nil, err
@@ -182,40 +198,67 @@ func (c *Client) getOnlyOneMediaContent(uri string) (*Media, error) {
 	return media[0], nil
 }
 
-func (c *Client) GetCurrentUserRecentMedia(max, min, count int) ([]*Media, error) {
-	return c.getMedia(fmt.Sprintf("%susers/self/media/recent/?max_id=%d&min_id=%d&count=%d&access_token=%s",
-		apiUrl, max, min, count, c.access_token,
+// Get current user media resources
+// and how many resources want to return.
+func (c Client) GetCurrentUserRecentMedia(max_id, min_id string, count int) ([]*Media, error) {
+	return c.getMedia(fmt.Sprintf("%susers/self/media/recent/?max_id=%s&min_id=%s&count=%d&access_token=%s",
+		apiUrl, max_id, min_id, count, c.access_token,
 	))
 }
 
-func (c *Client) GetUserMedia(user_id string, max, min, count int, ) ([]*Media, error) {
+// Get media resources from respective
+// user_id, for more information about it, go to
+// https://www.instagram.com/developer/endpoints/users/#get_users_media_recent
+func (c Client) GetUserMedia(user_id string, max, min, count int) ([]*Media, error) {
 	return c.getMedia(fmt.Sprintf("%susers/%s/media/recent/?max_id=%d&min_id=%d&count=%d&access_token=%s",
 		apiUrl, user_id, max, min, count, c.access_token,
 	))
 }
 
-func (c *Client) GetCurrentUserMediaLiked(max_like_id string, count int) ([]*Media, error) {
+// Get the recent media liked by the current
+// user, for more information aboit it, go to
+// https://www.instagram.com/developer/endpoints/users/#get_users_feed_liked
+func (c Client) GetCurrentUserMediaLiked(max_like_id string, count int) ([]*Media, error) {
 	return c.getMedia(fmt.Sprintf("%susers/self/media/liked?max_like_id=%s&count=%d&access_token=%s",
 		apiUrl, max_like_id, count, c.access_token,
 	))
 }
 
-func (c *Client) GetMediaById(media_id string) (*Media, error) {
-	return c.getOnlyOneMediaContent(fmt.Sprintf("%smedia/%s?access_token=%s", apiUrl, media_id, c.access_token))
+// Get media resource by id,
+// for more information about it, go to
+// https://www.instagram.com/developer/endpoints/media/#get_media
+func (c Client) GetMediaById(media_id string) (*Media, error) {
+	return c.getOnlyOneMediaContent(fmt.Sprintf("%smedia/%s?access_token=%s",
+		apiUrl, media_id, c.access_token))
 }
 
-func (c *Client) GetMediaByShortcode(short_code string) (*Media, error) {
-	return c.getOnlyOneMediaContent(fmt.Sprintf("%smedia/shortcode/%s?access_token=%s", apiUrl, short_code, c.access_token))
+// Get media resouce by its shortcode,
+// for more information about it, go to
+// https://www.instagram.com/developer/endpoints/media/#get_media_by_shortcode
+func (c Client) GetMediaByShortcode(short_code string) (*Media, error) {
+	return c.getOnlyOneMediaContent(fmt.Sprintf("%smedia/shortcode/%s?access_token=%s",
+		apiUrl, short_code, c.access_token))
 }
 
-func (c *Client) SearchMedia(lat, long float64) ([]*Media, error) {
-	return c.getMedia(fmt.Sprintf("%smedia/search?lat=%f&lng=%f&access_token=%s", apiUrl, lat, long, c.access_token))
+// Get media resouces by latitude, longitude and distance,
+// for more information about it, go to
+// https://www.instagram.com/developer/endpoints/media/#get_media_search
+func (c Client) SearchMedia(lat, long, distance float64) ([]*Media, error) {
+	return c.getMedia(fmt.Sprintf("%smedia/search?lat=%f&lng=%f&distance=%f&access_token=%s",
+		apiUrl, lat, long, distance, c.access_token))
 }
 
-func (c *Client) GetRecentMediaTaggedByTagName(tagname string) ([]*Media, error) {
+// Get media resources that has hashtags equal to 'tagname',
+// for more information about it, go to
+// https://www.instagram.com/developer/endpoints/tags/#get_tags_media_recent
+func (c Client) GetRecentMediaTaggedByTagName(tagname string) ([]*Media, error) {
 	return c.getMedia(fmt.Sprintf("%stags/%s/media/recent?access_token=%s", apiUrl, tagname, c.access_token))
 }
 
-func (c *Client) GetRecentMediaLocation(location_id string) ([]*Media, error) {
-	return c.getMedia(fmt.Sprintf("%slocations/%s/media/recent?access_token=%s", apiUrl, location_id, c.access_token))
+// Get media resources from a respective location id,
+// for more information about it, go to
+// https://www.instagram.com/developer/endpoints/locations/#get_locations_media_recent
+func (c Client) GetRecentMediaLocation(location_id string) ([]*Media, error) {
+	return c.getMedia(fmt.Sprintf("%slocations/%s/media/recent?access_token=%s",
+		apiUrl, location_id, c.access_token))
 }

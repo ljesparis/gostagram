@@ -5,6 +5,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+
 type Location struct {
 	Id        string
 	Name      string
@@ -12,7 +13,10 @@ type Location struct {
 	Longitude float64
 }
 
-func (c *Client) GetLocationById(location_id string) (*Location, error) {
+// Get an especific location by a respective id,
+// for more information about it, go to
+// https://www.instagram.com/developer/endpoints/locations/#get_locations
+func (c Client) GetLocationById(location_id string) (*Location, error) {
 	tmp, _, err := c.get(fmt.Sprintf("%slocations/%s?access_token=%s", apiUrl, location_id, c.access_token))
 	if err != nil {
 		return nil, err
@@ -27,11 +31,10 @@ func (c *Client) GetLocationById(location_id string) (*Location, error) {
 	return &location, nil
 }
 
-func GetLocationOfRecentMedia(max_id, min_id int, access_token string)  {
-
-}
-
-func (c *Client) SearchLocations(latitude, longitude, distance, facebook_places_id string) ([]*Location, error) {
+// Search locations by its latitude, longitude, distance and facebook places,
+// for more information about it, go to
+// https://www.instagram.com/developer/endpoints/locations/#get_locations_search
+func (c Client) SearchLocations(latitude, longitude, distance, facebook_places_id string) ([]*Location, error) {
 	tmp, _, err := c.get(fmt.Sprintf("%slocations/search?lat=%s&lng=%s&distance=%s&facebook_places_id=%s&access_token=%s",
 		apiUrl, latitude, longitude, distance, facebook_places_id, c.access_token))
 
@@ -40,7 +43,6 @@ func (c *Client) SearchLocations(latitude, longitude, distance, facebook_places_
 	}
 
 	tmpLocations := (*tmp).([]interface{})
-
 	var locations []*Location
 	for _, tmplocation := range tmpLocations {
 		var location Location

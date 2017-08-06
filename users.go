@@ -5,6 +5,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+// UserDetailed struct represents user profile information.
 type UserDetailed struct {
 	Id             string
 	Bio            string
@@ -20,6 +21,9 @@ type UserDetailed struct {
 	}
 }
 
+// User struct represents main user information,
+// most of the time, returned by comments or media
+// metadata.
 type User struct {
 	Id             string
 	Type           string
@@ -29,7 +33,7 @@ type User struct {
 	ProfilePicture string `mapstructure:"profile_picture"`
 }
 
-func (c *Client) getUser(uri string) (*UserDetailed, error) {
+func (c Client) getUser(uri string) (*UserDetailed, error) {
 	tmp, _, err := c.get(uri)
 
 	if err != nil {
@@ -45,7 +49,7 @@ func (c *Client) getUser(uri string) (*UserDetailed, error) {
 	return &userDetailed, nil
 }
 
-func (c *Client) getUsers(uri string) ([]*User, error) {
+func (c Client) getUsers(uri string) ([]*User, error) {
 	tmp, _, err := c.get(uri)
 	if err != nil {
 		return nil, err
@@ -67,30 +71,49 @@ func (c *Client) getUsers(uri string) ([]*User, error) {
 	return users, nil
 }
 
-func (c *Client) GetCurrentUser() (*UserDetailed, error) {
+// Get current logged user data,
+// for more information go to
+// https://www.instagram.com/developer/endpoints/users/#get_users_self
+func (c Client) GetCurrentUser() (*UserDetailed, error) {
 	return c.getUser(fmt.Sprintf("%susers/self/?access_token=%s", apiUrl, c.access_token))
 }
 
-func (c *Client) GetUser(id string) (*UserDetailed, error) {
+// Get other user data,
+// got more information go to
+// https://www.instagram.com/developer/endpoints/users/#get_users
+func (c Client) GetUser(id string) (*UserDetailed, error) {
 	return c.getUser(fmt.Sprintf("%susers/%s/?access_token=%s", apiUrl, id, c.access_token))
 }
 
-func (c *Client) SearchUsers(query string, count int) ([]*User, error) {
+// get a list of users from the query,
+// for more information go to
+// https://www.instagram.com/developer/endpoints/users/#get_users_search
+func (c Client) SearchUsers(query string, count int) ([]*User, error) {
 	return c.getUsers(fmt.Sprintf("%susers/search?q=%s&count=%d&access_token=%s",
 		apiUrl, query, count, c.access_token))
 }
 
-func (c *Client) GetCurrentUserFollows() ([]*User, error) {
+// Get a list of users that current
+// user follows, for more information go to
+// https://www.instagram.com/developer/endpoints/relationships/#get_users_follows
+func (c Client) GetCurrentUserFollows() ([]*User, error) {
 	return c.getUsers(fmt.Sprintf("%susers/self/follows?access_token=%s",
 		apiUrl, c.access_token))
 }
 
-func (c *Client) GetCurrentUserFollowedBy() ([]*User, error) {
+// Get a list of users, that current user
+// is followed, for more information go to
+// https://www.instagram.com/developer/endpoints/relationships/#get_users_followed_by
+func (c Client) GetCurrentUserFollowedBy() ([]*User, error) {
 	return c.getUsers(fmt.Sprintf("%susers/self/followed-by?access_token=%s",
 		apiUrl, c.access_token))
 }
 
-func (c *Client) GetCurrentUserRequestedBy() ([]*User, error) {
+// Get a list of users who have requested
+// this user's permission to follow,
+// for more information go to
+// https://www.instagram.com/developer/endpoints/relationships/#get_incoming_requests
+func (c Client) GetCurrentUserRequestedBy() ([]*User, error) {
 	return c.getUsers(fmt.Sprintf("%susers/self/requested-by?access_token=%s",
 		apiUrl, c.access_token))
 }
