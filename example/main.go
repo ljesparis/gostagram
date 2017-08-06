@@ -80,7 +80,7 @@ var (
 	cookie_maxage  = 24 * 60 * 60 // 24 hours.
 
 	// session
-	encryption_key = "" // 32 bytes secret.
+	encryption_key = "" //32bytes key
 )
 
 
@@ -240,7 +240,6 @@ func decrypt(ciphertext []byte, key []byte) ([]byte, error) {
 
 
 func encodeSession(data *map[string]string) string {
-	logger.Println(data)
 	tmp := ""
 	i := 0
 	for key, val := range (*data) {
@@ -251,7 +250,6 @@ func encodeSession(data *map[string]string) string {
 		i++
 	}
 
-	logger.Println(data)
 	dd, err := encrypt([]byte(tmp), []byte(encryption_key))
 
 	if err != nil {
