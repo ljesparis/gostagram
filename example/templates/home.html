@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Gostagram - Example</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
+        integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous"/>
+  <link rel="stylesheet" href="/static/css/font-awesome.css">
+  <link rel="stylesheet" href="/static/css/bootstrap-social.css">
+  <link rel="stylesheet" href="/static/css/main.css" />
+</head>
+<body>
+  {{if .User.IsAuthenticated }}
+  <nav class="navbar navbar-light bg-faded border-bottom-0">
+    <a href="/logout" class="navbar-toggler-right btn btn-instagram my-2 instagram-logout" type="button">Logout</a>
+    <div class="navbar-brand mb-0">
+      <img src="{{.User.Image}}" class="rounded-circle d-inline-block"
+           width="40" height="40" alt="{{.User.Fullname}}">
+      <span class="navbar-text instagram-username">{{.User.Username}}</span>
+    </div>
+  </nav>
+  <div class="container-fluid">
+    <div class="row justify-content-center align-items-center instagram-container">
+      <div class="card">
+        <div class="card-block d-flex flex-md-row flex-column">
+          {{range .MediaImages }}
+          <img class="card-img-top instagram-image"
+               src="{{.Images.StandardResolution.Url}}"
+               alt="media resource"/>
+          <div class="instagram-comments">
+            <h3 class="instagram-comment-title">Comments.</h3>
+            {{range getMediaComment .Id }}
+            <p class="instagram-comment"><strong>{{.From.Username}}</strong> {{.Text}}</p>
+            {{end}}
+          </div>
+          {{end}}
+        </div>
+      </div>
+    </div>
+  </div>
+  {{else}}
+  <div class="container">
+    <div class="row d-flex align-items-center justify-content-center instagram-container">
+      <div class="col-md-5">
+        <div class="card text-center">
+          <div class="card-block">
+            <p class="card-text">
+              Simple Gostagram example, to show how to use
+              gostagram golang client, with a simple web application
+            </p>
+            <a href="{{.Url}}" class="btn btn-block btn-social btn-instagram text-center">
+              <span class="fa fa-instagram"></span> Sign in
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {{end}}
+  <script src="https://code.jquery.com/jquery-3.1.1.slim.min.js"
+          integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n"
+          crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js"
+          integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb"
+          crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"
+          integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
+          crossorigin="anonymous"></script>
+</body>
+</html>
