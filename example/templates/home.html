@@ -16,7 +16,9 @@
     <a href="/logout" class="navbar-toggler-right btn btn-instagram my-2 instagram-logout" type="button">Logout</a>
     <div class="navbar-brand mb-0">
       <img src="{{.User.Image}}" class="rounded-circle d-inline-block"
-           width="40" height="40" alt="{{.User.Fullname}}">
+           width="40" height="40" alt="{{.User.Fullname}}" id="instagram-user" data-container="body"
+           data-toggle="popover" data-trigger="focus"
+           data-content="{{.Counts.Follows}} Following ----- {{.Counts.FollowedBy}} Followers" />
       <span class="navbar-text instagram-username">{{.User.Username}}</span>
     </div>
   </nav>
@@ -30,10 +32,12 @@
                alt="media resource"/>
           <div class="instagram-comments">
             <h3 class="instagram-comment-title">Comments.</h3>
-            {{range getMediaComment .Id }}
+            {{range getMediaComments .Id }}
             <p class="instagram-comment"><strong>{{.From.Username}}</strong> {{.Text}}</p>
             {{end}}
           </div>
+          {{else}}
+          <h3 class="align-self-center"><strong>{{.User.Username}}</strong> has not media content.</h3>
           {{end}}
         </div>
       </div>
@@ -67,5 +71,6 @@
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"
           integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
           crossorigin="anonymous"></script>
+  <script src="/static/js/main.js"></script>
 </body>
 </html>
