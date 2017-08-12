@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	maxLocationDistanceError = errors.New("Maximun distance is 5km.")
+	maxLocationDistanceError = errors.New("Maximun distance is 750m.")
 )
 
 const (
