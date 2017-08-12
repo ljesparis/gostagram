@@ -3,29 +3,29 @@
 package main
 
 import (
-	"net/http"
-	"fmt"
-	"errors"
-	"encoding/json"
-	"io"
-	"net/url"
-	"os"
-	"crypto/hmac"
-	"crypto/sha256"
+	"context"
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/hmac"
 	"crypto/rand"
-	"encoding/hex"
-	"log"
-	"sync"
-	"strings"
-	"time"
-	"reflect"
+	"crypto/sha256"
 	"encoding/base64"
-	"context"
-	"io/ioutil"
-	"path"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"html/template"
+	"io"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"net/url"
+	"os"
+	"path"
+	"reflect"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/ljesparis/gostagram"
 )
@@ -45,7 +45,7 @@ var (
 	redirectUrlMissing    = errors.New("Missing redirect url.")
 	accessTokenMissing    = errors.New("Token Misteriously missing.")
 	clientSecretMissing   = errors.New("Missing client secret.")
-	TemplateDoesNotExists = errors.New("Template does not exists.")
+	templateDoesNotExists = errors.New("Template does not exists.")
 )
 
 // SETTINGS.
@@ -66,7 +66,7 @@ var (
 	clientId     = ""
 	clientSecret = ""
 	redirectUrl  = "http://" + host + ":" + port + oauth2Route
-	scopes       = []string {
+	scopes       = []string{
 		"basic",
 		"comments",
 		"follower_list",
@@ -76,13 +76,12 @@ var (
 	}
 
 	// cookie
-	cookie_name    = "gostagram"
-	cookie_maxage  = 24 * 60 * 60 // 24 hours.
+	cookie_name   = "leparis"
+	cookie_maxage = 24 * 60 * 60 // 24 hours.
 
 	// session
 	encryption_key = "" //32bytes key
 )
-
 
 //
 //
@@ -120,20 +119,20 @@ func findTemplatename(filename string) (string, error) {
 	if strings.Contains(filename, "/") {
 		tmp = strings.Split(filename, "/")
 	} else {
-		tmp = []string{ filename }
+		tmp = []string{filename}
 	}
 
 	var templatep string
 	for i, p := range tmp {
 		templatep = path.Join(templates_dir, p)
-		if i == len(tmp) - 1 {
+		if i == len(tmp)-1 {
 			if _, err := os.Stat(templatep); err == nil && !os.IsNotExist(err) {
 				return templatep, nil
 			}
 		}
 	}
 
-	return "", TemplateDoesNotExists
+	return "", templateDoesNotExists
 }
 
 func render(res http.ResponseWriter, tpl string, data interface{}, funcs template.FuncMap) {
@@ -175,17 +174,17 @@ type BaseUser interface {
 }
 
 type User struct {
-	Id        string
-	Image     string
-	Fullname  string
-	Username  string
+	Id       string
+	Image    string
+	Fullname string
+	Username string
 }
 
 func (u User) IsAuthenticated() bool {
 	return true
 }
 
-type AnonymousUser struct {}
+type AnonymousUser struct{}
 
 func (u AnonymousUser) IsAuthenticated() bool {
 	return false
@@ -238,13 +237,13 @@ func decrypt(ciphertext []byte, key []byte) ([]byte, error) {
 	return gcm.Open(nil, nonce, ciphertext, nil)
 }
 
-
+// encode and encrypt session data.
 func encodeSession(data *map[string]string) string {
 	tmp := ""
 	i := 0
-	for key, val := range (*data) {
+	for key, val := range *data {
 		tmp += key + "~" + val
-		if i < len(*data) - 1 {
+		if i < len(*data)-1 {
 			tmp += "|"
 		}
 		i++
@@ -259,6 +258,7 @@ func encodeSession(data *map[string]string) string {
 	return base64.StdEncoding.EncodeToString(dd)
 }
 
+// decode and decrypt session data.
 func decodeSession(session string) *map[string]string {
 	session_encripted, err := base64.StdEncoding.DecodeString(session)
 	if err != nil {
@@ -292,7 +292,9 @@ func decodeSession(session string) *map[string]string {
 //
 
 var (
-	signed_state = generateState()
+	signed_state     = generateState()
+	accessTokenUrl   = "https://api.instagram.com/oauth/access_token"
+	authorizationUrl = "https://api.instagram.com/oauth/authorize/?client_id=%s&redirect_uri=%s&response_type=code"
 )
 
 // Avoid CSRF attack.
@@ -318,8 +320,7 @@ func generateOauthUrl(client_id, redirect_url, state string, scopes []string) (s
 		return "", redirectUrlMissing
 	}
 
-	tmpUrl := "https://api.instagram.com/oauth/authorize/?client_id=%s&redirect_uri=%s&response_type=code"
-	tmpUrl = fmt.Sprintf(tmpUrl, client_id, redirect_url)
+	tmpUrl := fmt.Sprintf(authorizationUrl, client_id, redirect_url)
 
 	if len(scopes) >= 1 {
 		tmpUrl += "&scope="
@@ -327,12 +328,12 @@ func generateOauthUrl(client_id, redirect_url, state string, scopes []string) (s
 
 	for i, scope := range scopes {
 		tmpUrl += scope
-		if i < len(scopes) - 1 {
+		if i < len(scopes)-1 {
 			tmpUrl += "+"
 		}
 	}
 
-	if len(state) >= 1{
+	if len(state) >= 1 {
 		tmpUrl += "&state=" + signed_state
 	}
 
@@ -358,11 +359,11 @@ func exchangeToken(client_id, client_secret, redirect_url, code string) (string,
 
 	tmpUrl := "https://api.instagram.com/oauth/access_token"
 	res, err := http.PostForm(tmpUrl, url.Values{
-		"client_id": {client_id},
+		"client_id":     {client_id},
 		"client_secret": {client_secret},
-		"grant_type": {"authorization_code"},
-		"redirect_uri": {redirect_url},
-		"code": {code},
+		"grant_type":    {"authorization_code"},
+		"redirect_uri":  {redirect_url},
+		"code":          {code},
 	})
 
 	if err != nil {
@@ -393,6 +394,20 @@ func exchangeToken(client_id, client_secret, redirect_url, code string) (string,
 //
 //
 
+func getMediaComments(media_id string) []gostagram.Comment {
+	tmpComments, err := client.GetMediaComments(media_id)
+	if err != nil {
+		return []gostagram.Comment{}
+	}
+
+	var comments []gostagram.Comment
+	for _, tmpComment := range tmpComments {
+		comments = append(comments, *tmpComment)
+	}
+
+	return comments
+}
+
 func home(res http.ResponseWriter, req *http.Request) {
 	tmpUrl, err := generateOauthUrl(clientId, redirectUrl, signed_state, scopes)
 	if err != nil {
@@ -407,7 +422,9 @@ func home(res http.ResponseWriter, req *http.Request) {
 		if user.IsAuthenticated() {
 			tplCtx["User"] = user.(User)
 
-			tmpMedia, err := client.GetCurrentUserRecentMedia("1", "1", 1)
+			tmpMedia, err := client.GetCurrentUserRecentMedia(gostagram.Parameters{
+				"count": "1",
+			})
 			if err != nil {
 				panic(err)
 			}
@@ -418,24 +435,19 @@ func home(res http.ResponseWriter, req *http.Request) {
 			}
 
 			tplCtx["MediaImages"] = media
+
+			tmpUser, err := client.GetCurrentUser()
+			if err != nil {
+				panic(err)
+			}
+
+			tplCtx["Counts"] = tmpUser.Counts
 		} else {
 			tplCtx["User"] = user.(AnonymousUser)
 		}
 
 		render(res, "home.html", tplCtx, template.FuncMap{
-			"getMediaComment": func(media_id string) []gostagram.Comment {
-				tmpComments, err := client.GetMediaComments(media_id)
-				if err != nil {
-					return []gostagram.Comment{}
-				}
-
-				var comments []gostagram.Comment
-				for _, tmpComment := range tmpComments {
-					comments = append(comments, *tmpComment)
-				}
-
-				return comments
-			},
+			"getMediaComments": getMediaComments,
 		})
 	}
 }
@@ -457,21 +469,21 @@ func instagramLogin(res http.ResponseWriter, req *http.Request) {
 			http.Redirect(res, req, error404Route, 302)
 		} else {
 			client = gostagram.NewClient(token)
-			user := map[string]string {
-				"image": tmp["profile_picture"].(string),
+			user := map[string]string{
+				"image":    tmp["profile_picture"].(string),
 				"username": tmp["username"].(string),
-				"id": tmp["id"].(string),
+				"id":       tmp["id"].(string),
 				"fullname": tmp["full_name"].(string),
-				"tk": token,
+				"tk":       token,
 			}
 
 			http.SetCookie(res, &http.Cookie{
-				Value: encodeSession(&user),
-				Name: cookie_name,
+				Value:    encodeSession(&user),
+				Name:     cookie_name,
 				HttpOnly: true,
-				Path: "/",
-				Expires: time.Now().Add(time.Hour * 24),
-				MaxAge: cookie_maxage,
+				Path:     "/",
+				Expires:  time.Now().Add(time.Hour * 24),
+				MaxAge:   cookie_maxage,
 			})
 
 			http.Redirect(res, req, homeRoute, 302)
@@ -481,11 +493,11 @@ func instagramLogin(res http.ResponseWriter, req *http.Request) {
 
 func logout(res http.ResponseWriter, req *http.Request) {
 	http.SetCookie(res, &http.Cookie{
-		Name: cookie_name,
+		Name:     cookie_name,
 		HttpOnly: true,
-		Path: "/",
-		Expires: time.Now(),
-		MaxAge: -1,
+		Path:     "/",
+		Expires:  time.Now(),
+		MaxAge:   -1,
 	})
 
 	client = nil
@@ -513,7 +525,8 @@ var (
 
 func Logger(next http.Handler) http.HandlerFunc {
 
-	once.Do(func(){
+	// create logger once.
+	once.Do(func() {
 		logger = log.New(os.Stdout, "", log.LUTC)
 	})
 
@@ -534,7 +547,7 @@ func Logger(next http.Handler) http.HandlerFunc {
 			logger.Printf("Remote:{%s} - Path:{%s} - Code:{%d} - Protocol:{%s} - ContentLength:{%d} - Brenchmark:{%s}",
 				_path, remoteAddr, status_code, proto, contentLength, brenchmark,
 			)
-		} ()
+		}()
 
 		next.ServeHTTP(res, req)
 	}
@@ -543,7 +556,7 @@ func Logger(next http.Handler) http.HandlerFunc {
 func Recover(next http.Handler) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 
-		defer func(){
+		defer func() {
 			if r := recover(); r != nil {
 				var err error
 				switch r := r.(type) {
@@ -562,7 +575,7 @@ func Recover(next http.Handler) http.HandlerFunc {
 }
 
 // authenticating user if session exists.
-// base64 session.
+// base64 and encrypted session.
 func AuthUser(next http.Handler) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		var user BaseUser
@@ -573,22 +586,25 @@ func AuthUser(next http.Handler) http.HandlerFunc {
 			tmpUser := decodeSession(cookie.Value)
 			user = BaseUser(User{
 				Fullname: (*tmpUser)["fullname"],
-				Image: (*tmpUser)["image"],
+				Image:    (*tmpUser)["image"],
 				Username: (*tmpUser)["username"],
-				Id: (*tmpUser)["id"],
+				Id:       (*tmpUser)["id"],
 			})
+
 			client = gostagram.NewClient((*tmpUser)["tk"])
 		}
 
+		// adding user to request context.
 		ctx := context.WithValue(req.Context(), "user", user)
 		req = req.WithContext(ctx)
+
 		next.ServeHTTP(res, req)
 	}
 }
 
-func Secure(next http.Handler) http.HandlerFunc {
+func CommonResponseHeaders(next http.Handler) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("X-XSS-Protection", 	"1; mode=block")
+		res.Header().Set("X-XSS-Protection", "1; mode=block")
 		res.Header().Set("Surrogate-Control", "no-store")
 		res.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate")
 		res.Header().Set("Pragma", "no-cache")
@@ -610,12 +626,9 @@ func Secure(next http.Handler) http.HandlerFunc {
 
 func main() {
 	if len(port) == 0 {
-		fmt.Println("port not set.")
-		os.Exit(1)
 		panic("PORT environment variable not set.")
 	} else if len(host) == 0 {
-		fmt.Println("HOST environment variable not set.")
-		os.Exit(1)
+		panic("HOST environment variable not set.")
 	}
 
 	mux := http.NewServeMux()
@@ -628,7 +641,7 @@ func main() {
 	// add staticfiles directory.
 	mux.Handle(static_url, http.StripPrefix(static_url, http.FileServer(http.Dir(static_dir))))
 
-	http.ListenAndServe(host+ ":" + port,
-		Logger(Recover(Secure(AuthUser(mux)))),
+	http.ListenAndServe(host+":"+port,
+		Logger(Recover(CommonResponseHeaders(AuthUser(mux)))),
 	)
 }
