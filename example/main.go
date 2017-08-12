@@ -612,8 +612,9 @@ func main() {
 	if len(port) == 0 {
 		fmt.Println("port not set.")
 		os.Exit(1)
+		panic("PORT environment variable not set.")
 	} else if len(host) == 0 {
-		fmt.Println("host not set.")
+		fmt.Println("HOST environment variable not set.")
 		os.Exit(1)
 	}
 
