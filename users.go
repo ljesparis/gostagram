@@ -88,9 +88,16 @@ func (c Client) GetUser(id string) (*UserDetailed, error) {
 // get a list of users from the query,
 // for more information go to
 // https://www.instagram.com/developer/endpoints/users/#get_users_search
-func (c Client) SearchUsers(query string, count int) ([]*User, error) {
-	return c.getUsers(fmt.Sprintf("%susers/search?q=%s&count=%d&access_token=%s",
-		apiUrl, query, count, c.access_token))
+func (c Client) SearchUsers(query string, parameters Parameters) ([]*User, error) {
+	tmp := "%susers/search?q=%s&access_token=%s"
+	if parameters != nil {
+		if parameters["count"] != "" {
+			tmp += fmt.Sprintf("&count=%s", parameters["count"])
+		}
+	}
+
+	return c.getUsers(fmt.Sprintf(tmp,
+		apiUrl, query, c.access_token))
 }
 
 // Get a list of users that current

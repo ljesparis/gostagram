@@ -2,9 +2,19 @@ package gostagram
 
 import (
 	"fmt"
+	"errors"
+
 	"github.com/mitchellh/mapstructure"
+	"strconv"
 )
 
+var (
+	maxLocationDistanceError = errors.New("Maximun distance is 5km.")
+)
+
+const (
+	maxLocationDistance = 750
+)
 
 type Location struct {
 	Id        string
@@ -34,9 +44,25 @@ func (c Client) GetLocationById(location_id string) (*Location, error) {
 // Search locations by its latitude, longitude, distance and facebook places,
 // for more information about it, go to
 // https://www.instagram.com/developer/endpoints/locations/#get_locations_search
-func (c Client) SearchLocations(latitude, longitude, distance, facebook_places_id string) ([]*Location, error) {
-	tmp, _, err := c.get(fmt.Sprintf("%slocations/search?lat=%s&lng=%s&distance=%s&facebook_places_id=%s&access_token=%s",
-		apiUrl, latitude, longitude, distance, facebook_places_id, c.access_token))
+func (c Client) SearchLocations(latitude, longitude string, params Parameters) ([]*Location, error) {
+	tmp1 := "%slocations/search?lat=%s&lng=%s&access_token=%s"
+	if params != nil {
+		if params["distance"] != "" {
+			distance, err := strconv.Atoi(params["distance"])
+			if err != nil {
+				return nil, err
+			}
+
+			if distance > maxLocationDistance {
+				return nil, maxLocationDistanceError
+			}
+
+			tmp1 += fmt.Sprintf("&distance=%d", distance)
+		}
+	}
+
+	tmp, _, err := c.get(fmt.Sprintf(tmp1,
+		apiUrl, latitude, longitude, c.access_token))
 
 	if err != nil {
 		return nil, err
