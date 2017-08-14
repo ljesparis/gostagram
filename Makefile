@@ -17,5 +17,4 @@ clean:
 	@rm -rf Gopkg.lock Gopkg.toml vendor
 
 test:
-	@echo test
-
+	@go test -v -parallel 8 -tags gostagram
