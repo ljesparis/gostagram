@@ -6,8 +6,6 @@ var (
 	location_id        = ""
 	latitude           = ""
 	longitude          = ""
-	distance           = ""
-	facebook_places_id = ""
 )
 
 func TestClient_GetLocationById(t *testing.T) {
@@ -24,10 +22,8 @@ func TestClient_GetLocationById(t *testing.T) {
 func TestClient_SearchLocations(t *testing.T) {
 	FatalIfEmptyString(latitude, "latitude cannot be empty.", t)
 	FatalIfEmptyString(longitude, "longitude cannot be empty.", t)
-	FatalIfEmptyString(distance, "distance cannot be empty.", t)
-	FatalIfEmptyString(facebook_places_id, "facebook places id cannot be empty.", t)
 	client := CreateClient(t)
-	tmp, err := client.SearchLocations(latitude, longitude, distance, facebook_places_id)
+	tmp, err := client.SearchLocations(latitude, longitude, nil)
 	PanicIfError(err, t)
 	for _, location := range tmp {
 		t.Log("------------------ Start Location ------------------")
@@ -36,5 +32,35 @@ func TestClient_SearchLocations(t *testing.T) {
 		t.Log(location.Longitude)
 		t.Log(location.Latitude)
 		t.Log("------------------ End Location ------------------")
+	}
+}
+
+func TestClient_SearchLocations_DistanceError2(t *testing.T) {
+	FatalIfEmptyString(latitude, "latitude cannot be empty.", t)
+	FatalIfEmptyString(longitude, "longitude cannot be empty.", t)
+	client := CreateClient(t)
+	_, err := client.SearchLocations(latitude, longitude, Parameters{
+		"distance": "asd",
+	})
+
+	if err != nil {
+		t.Log("Success distance most be a digit")
+	} else {
+		t.Fatal("Error, distance parameter it is not a digit and request was sended anyway.")
+	}
+}
+
+func TestClient_SearchLocations_DistanceError(t *testing.T) {
+	FatalIfEmptyString(latitude, "latitude cannot be empty.", t)
+	FatalIfEmptyString(longitude, "longitude cannot be empty.", t)
+	client := CreateClient(t)
+	_, err := client.SearchLocations(latitude, longitude, Parameters{
+		"distance": "800",
+	})
+
+	if err != nil {
+		t.Log("Success distance cannot be higher to 750")
+	} else {
+		t.Fatal("Error, distance parameter it is higher to 750 and request was sended anyway.")
 	}
 }

@@ -69,31 +69,31 @@ func TestClient_PostMediaComment2(t *testing.T) {
 
 	FatalIfEmptyString(media_id, "media id cannot be empty.", t)
 	client := CreateClient(t)
-	error := true
+	hasErr := true
 
 	for _, el := range input {
 		err := client.PostMediaComment(el, media_id)
 		if err == CommentsCapitalLettersError {
 			t.Logf("Cannot comment '%s'.", el)
-			error = false
+			hasErr = false
 		} else if err == CommentsMaxLengthExceed {
 			t.Log("Comment cannot has more than 300 characters.")
-			error = false
+			hasErr = false
 		} else if err == CommentsHashtagExceed {
 			t.Log("Comment cannot has more than 4 hashtags.")
-			error = false
+			hasErr = false
 		} else if err == CommentsUrlExceed {
 			t.Log("Comment cannot has more than 2 urls")
-			error = false
+			hasErr = false
 		} else if err == MissingCommentError {
 			t.Log("Comment cannot be an empty string.")
-			error = false
+			hasErr = false
 		} else {
 			t.Fatal(err)
 		}
 	}
 
-	if error {
+	if hasErr {
 		t.Fatal("Not error throwed!")
 	}
 }

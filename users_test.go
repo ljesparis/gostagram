@@ -7,6 +7,7 @@ import (
 var (
 	// basic variables to create
 	// an instagram client.
+	clientId         = ""
 	clientSecret     = ""
 	accessToken      = ""
 	useSignedRequest = false
@@ -23,6 +24,7 @@ func CreateClient(t *testing.T) *Client {
 		client.SetSignedRequest(true)
 		FatalIfEmptyString(clientSecret, "Client secret not set and is need it for signed request.", t)
 		client.SetClientSecret(clientSecret)
+		client.SetClientId(clientId)
 	}
 
 	return client
@@ -103,7 +105,14 @@ func TestClient_GetUser(t *testing.T) {
 
 func TestClient_SearchUsers(t *testing.T) {
 	client := CreateClient(t)
-	users, err := client.SearchUsers(user_query, 1)
+	users, err := client.SearchUsers(user_query, nil)
+	PanicIfError(err, t)
+	IterateUsers(users, t)
+}
+
+func TestClient_SearchUsers2(t *testing.T) {
+	client := CreateClient(t)
+	users, err := client.SearchUsers(user_query, Parameters{"count": "2"})
 	PanicIfError(err, t)
 	IterateUsers(users, t)
 }
