@@ -114,6 +114,9 @@ type BaseMediaResource struct {
 	}
 }
 
+// MediaImage struct represents
+// an Image resource that instagram
+// endpoint returns.
 type MediaImage struct {
 	BaseMediaResource `mapstructure:",squash"`
 }
@@ -122,6 +125,9 @@ func (mi MediaImage) MediaType() MediaType {
 	return imageMediaType
 }
 
+// MediaVideo struct represents
+// an Image resource that instagram
+// endpoint returns.
 type MediaVideo struct {
 	BaseMediaResource `mapstructure:",squash"`
 
@@ -135,6 +141,9 @@ func (mi MediaVideo) MediaType() MediaType {
 	return videoMediaType
 }
 
+// MediaCarousel struct represents
+// an Image resource that instagram
+// endpoint returns.
 type MediaCarousel struct {
 	BaseMediaResource `mapstructure:",squash"`
 
