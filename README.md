@@ -11,11 +11,6 @@
 
 ---
 
-**Warning!**
-gostagram is in alpha release, is not stable. Use it on
-your own risk; version [1.0.0](https://github.com/ljesparis/gostagram/tree/1.0.0)
-is under development.
-
 ### Quick Start.
 
 **Create Instagram Client**
