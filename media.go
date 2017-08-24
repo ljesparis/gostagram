@@ -8,14 +8,13 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+// Media is a generic interface that represents
+// all valid instagram media resources
+// (Images, videos and carousel images).
+type Media interface {
+	MediaType() MediaType
+}
 
-var (
-	maxDistanceError = errors.New("Maximun distance is 5km.")
-)
-
-const (
-	maxDistance = 5000
-)
 
 // Represents every media file's type,
 // normaly used to differentiate video, image and
@@ -32,21 +31,21 @@ func (mt MediaType) IsVideo() bool {
 }
 
 func (mt MediaType) IsCarousel() bool {
-	return mt == videoMediaType
+	return mt == carouselMediaType
 }
 
 const (
 	imageMediaType    MediaType = 1
 	videoMediaType    MediaType = 2
 	carouselMediaType MediaType = 3
+
+	maxDistance = 5000
 )
 
-// Media is a generic interface that represents
-// all valid instagram media resources
-// (Images, videos and carousel images).
-type Media interface {
-	MediaType() MediaType
-}
+
+var (
+	maxDistanceError = errors.New("Maximun distance is 5km.")
+)
 
 type Image struct {
 	Url    string
@@ -147,11 +146,55 @@ func (mi MediaVideo) MediaType() MediaType {
 type MediaCarousel struct {
 	BaseMediaResource `mapstructure:",squash"`
 
-	CarouselMedia []struct{}
+	CarouselMedia []Media
 }
 
 func (mi MediaCarousel) MediaType() MediaType {
 	return carouselMediaType
+}
+
+// Carousel resource can have both image and video
+// resources with it, those resources base attributes
+// are with are in BaseMediaCarousel struct.
+type BaseMediaCarousel struct {
+	Type string
+
+	UserInPhoto []struct {
+		User User
+
+		Position struct {
+			X int
+			Y int
+		}
+	} `mapstructure:"user_in_photo"`
+}
+
+type MediaCarouselImage struct {
+	BaseMediaCarousel `mapstructure:",squash"`
+
+	Images struct {
+		Thumbnail          Image
+		LowResolution      Image `mapstructure:"low_resolution"`
+		StandardResolution Image `mapstructure:"standard_resolution"`
+	}
+}
+
+func (mi MediaCarouselImage) MediaType() MediaType {
+	return imageMediaType
+}
+
+type MediaCarouselVideo struct {
+	BaseMediaCarousel `mapstructure:",squash"`
+
+	Videos struct {
+		LowResolution      VideoResolution `mapstructure:"low_resolution"`
+		LowBandwidth       VideoResolution `mapstructure:"low_bandwidth"`
+		StandardResolution VideoResolution `mapstructure:"standard_resolution"`
+	}
+}
+
+func (mi MediaCarouselVideo) MediaType() MediaType {
+	return videoMediaType
 }
 
 func (c Client) getMedia(uri string) ([]*Media, error) {
@@ -161,52 +204,93 @@ func (c Client) getMedia(uri string) ([]*Media, error) {
 		return nil, err
 	}
 
-	var tmpMediaArray []interface{}
+	var tmpMediaCollection []interface{}
 
 	// checking if media response is an
 	// interface array or a map of interfaces.
 	switch (*tmp).(type) {
 	case []interface{}:
-		tmpMediaArray = (*tmp).([]interface{})
+		tmpMediaCollection = (*tmp).([]interface{})
 		break
 	case map[string]interface{}:
-		tmpMediaArray = append(tmpMediaArray, (*tmp).(map[string]interface{}))
+		tmpMediaCollection = append(tmpMediaCollection, (*tmp).(map[string]interface{}))
 		break
 	}
 
-	var media_array []*Media
-	for _, tmpMedia := range tmpMediaArray {
-		tmp := tmpMedia.(map[string]interface{})
-		mediaType := tmp["type"].(string)
+	var mediaCollection []*Media
+	for _, tmpMediaInterface := range tmpMediaCollection {
+		tmpMedia := tmpMediaInterface.(map[string]interface{})
+		mediaType := tmpMedia["type"].(string)
+		var media Media
 
 		// check what kind of media resource,
 		// was returned. (video, image or carousel image.)
 		if mediaType == "image" {
-			if tmp["carousel_media"] != nil {
 
-			} else {
-				var media MediaImage
+			// carousel and image resources
+			// are both an image type.
 
-				if err := mapstructure.Decode(tmpMedia, &media); err != nil {
+			if tmpMedia["carousel_media"] != nil {
+				var mediaCarousel MediaCarousel
+
+				if err := mapstructure.Decode(tmpMediaInterface, &mediaCarousel); err != nil {
 					return nil, err
 				}
 
-				tt := Media(media)
-				media_array = append(media_array, &tt)
+				mediaCarousel.CarouselMedia = []Media{}
+				carouselMediaType := tmpMedia["carousel_media"].([]map[string]interface{})
+
+				for _, tmpcarouselMedia := range carouselMediaType {
+					tmpcarouselType := tmpcarouselMedia["type"].(string)
+					var media2 Media
+
+					if tmpcarouselType == "image" {
+						var mediaCarouselImage MediaCarouselImage
+
+						if err := mapstructure.Decode(tmpcarouselMedia, &mediaCarouselImage); err != nil {
+							return nil, err
+						}
+
+						media2 = Media(mediaCarouselImage)
+
+					} else if tmpcarouselType == "video" {
+						var mediaCarouselVideo MediaCarouselVideo
+
+						if err := mapstructure.Decode(tmpcarouselMedia, &mediaCarouselVideo); err != nil {
+							return nil, err
+						}
+
+						media2 = Media(mediaCarouselVideo)
+					}
+
+					// appending resources to carousel.
+					mediaCarousel.CarouselMedia = append(mediaCarousel.CarouselMedia, media2)
+				}
+
+				media = Media(mediaCarousel)
+			} else {
+				var mediaImage MediaImage
+
+				if err := mapstructure.Decode(tmpMedia, &mediaImage); err != nil {
+					return nil, err
+				}
+
+				media = Media(mediaImage)
 			}
 		} else if mediaType == "video" {
-			var media MediaVideo
+			var mediaVideo MediaVideo
 
-			if err := mapstructure.Decode(tmpMedia, &media); err != nil {
+			if err := mapstructure.Decode(tmpMedia, &mediaVideo); err != nil {
 				return nil, err
 			}
 
-			tt := Media(media)
-			media_array = append(media_array, &tt)
+			media = Media(mediaVideo)
 		}
+
+		mediaCollection = append(mediaCollection, &media)
 	}
 
-	return media_array, nil
+	return mediaCollection, nil
 }
 
 func (c Client) getOnlyOneMediaContent(uri string) (*Media, error) {
