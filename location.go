@@ -3,9 +3,9 @@ package gostagram
 import (
 	"fmt"
 	"errors"
+	"strconv"
 
 	"github.com/mitchellh/mapstructure"
-	"strconv"
 )
 
 var (

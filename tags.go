@@ -2,6 +2,7 @@ package gostagram
 
 import (
 	"fmt"
+
 	"github.com/mitchellh/mapstructure"
 )
 
