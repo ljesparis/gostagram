@@ -50,11 +50,11 @@ func NewClient(access_token string) *Client {
 }
 
 func (c *Client) SetClientId(id string) {
-	c.clientSecret = id
+	c.clientId = id
 }
 
 func (c *Client) SetClientSecret(cs string) {
-	c.clientId = cs
+	c.clientSecret = cs
 }
 
 func (c *Client) SetSignedRequest(sr bool) {
@@ -108,7 +108,7 @@ func (c Client) newRequest(method, uri string, res *httpResponse, dataToSend ...
 
 	switch method {
 	case gorequest.POST:
-		request = request.Post(uri).Type("multipart")
+		request = request.Post(uri).Type("form")
 
 		// if there's some data to send,
 		// add it to the body.
