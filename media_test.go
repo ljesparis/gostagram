@@ -1,6 +1,13 @@
 package gostagram
 
-import "testing"
+import (
+	"testing"
+)
+
+var (
+	media_id  = ""
+	shortcode = ""
+)
 
 func LogMedia(media *Media, t *testing.T) {
 	if (*media).MediaType().IsImage() {
@@ -145,88 +152,148 @@ func IterateMedia(media_arr []*Media, t *testing.T) {
 
 func TestClient_GetCurrentUserRecentMedia(t *testing.T) {
 	client := CreateClient(t)
-	media_arr, err := client.GetCurrentUserRecentMedia(1,1,1)
+	media_arr, err := client.GetCurrentUserRecentMedia(nil)
+	PanicIfError(err, t)
+	IterateMedia(media_arr, t)
+}
 
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestClient_GetCurrentUserRecentMedia2(t *testing.T) {
+	client := CreateClient(t)
+	media_arr, err := client.GetCurrentUserRecentMedia(Parameters{
+		"count": "1",
+	})
+	PanicIfError(err, t)
+	IterateMedia(media_arr, t)
+}
 
+func TestClient_GetCurrentUserRecentMedia3(t *testing.T) {
+	client := CreateClient(t)
+	media_arr, err := client.GetCurrentUserRecentMedia(Parameters{
+		"max_id": "1",
+		"min_id": "1",
+		"count": "1",
+	})
+	PanicIfError(err, t)
 	IterateMedia(media_arr, t)
 }
 
 func TestClient_GetUserMedia(t *testing.T) {
+	FatalIfEmptyString(other_user_id, "user id cannot be empty.", t)
 	client := CreateClient(t)
-	media_arr, err := client.GetUserMedia("3066964584", 1,1,1)
+	media_arr, err := client.GetUserMedia(other_user_id, nil)
+	PanicIfError(err, t)
+	IterateMedia(media_arr, t)
+}
 
-	if err != nil {
-		t.Fatal(err)
-	}
-
+func TestClient_GetUserMedia2(t *testing.T) {
+	FatalIfEmptyString(other_user_id, "user id cannot be empty.", t)
+	client := CreateClient(t)
+	media_arr, err := client.GetUserMedia(other_user_id, Parameters{
+		"count": "1",
+	})
+	PanicIfError(err, t)
 	IterateMedia(media_arr, t)
 }
 
 func TestClient_GetCurrentUserMediaLiked(t *testing.T) {
+	FatalIfEmptyString(media_id, "media id cannot be empty.", t)
 	client := CreateClient(t)
-	media_arr, err := client.GetCurrentUserMediaLiked("1499806890266583125_2451237325", 1)
+	media_arr, err := client.GetCurrentUserMediaLiked(media_id, Parameters{})
+	PanicIfError(err, t)
+	IterateMedia(media_arr, t)
+}
 
-	if err != nil {
-		t.Fatal(err)
-	}
-
+func TestClient_GetCurrentUserMediaLiked2(t *testing.T) {
+	FatalIfEmptyString(media_id, "media id cannot be empty.", t)
+	client := CreateClient(t)
+	media_arr, err := client.GetCurrentUserMediaLiked(media_id, Parameters{
+		"count": "1",
+	})
+	PanicIfError(err, t)
 	IterateMedia(media_arr, t)
 }
 
 func TestClient_GetMediaById(t *testing.T) {
+	FatalIfEmptyString(media_id, "media id cannot be empty.", t)
 	client := CreateClient(t)
-	media, err := client.GetMediaById("1499806890266583125_2451237325")
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	media, err := client.GetMediaById(media_id)
+	PanicIfError(err, t)
 	LogMedia(media, t)
 }
 
 func TestClient_GetMediaByShortcode(t *testing.T) {
+	FatalIfEmptyString(shortcode, "shortcode cannot be empty.", t)
 	client := CreateClient(t)
-	media, err := client.GetMediaByShortcode("BTQYmueBeBV")
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	media, err := client.GetMediaByShortcode(shortcode)
+	PanicIfError(err, t)
 	LogMedia(media, t)
 }
 
 func TestClient_SearchMedia(t *testing.T) {
 	client := CreateClient(t)
-	media_arr, err := client.SearchMedia(0, 0)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	media_arr, err := client.SearchMedia("0", "0", nil)
+	PanicIfError(err, t)
 	IterateMedia(media_arr, t)
 }
 
-func TestClient_GetRecentMediaTaggedByTagName(t *testing.T) {
+func TestClient_SearchMedia2(t *testing.T) {
 	client := CreateClient(t)
-	media_arr, err := client.GetRecentMediaTaggedByTagName("leoxnidas")
+	media_arr, err := client.SearchMedia("0", "0", Parameters{
+		"distance": "2000",
+	})
+	PanicIfError(err, t)
+	IterateMedia(media_arr, t)
+}
+
+func TestClient_SearchMedia_DistanceError(t *testing.T) {
+	client := CreateClient(t)
+	_, err := client.SearchMedia("0", "0", Parameters{
+		"distance": "asdasd",
+	})
 
 	if err != nil {
-		t.Fatal(err)
+		t.Log("Distance most be a digit")
+	} else {
+		t.Fatal("Error, distance parameter it is not a digit and request was sended anyway.")
 	}
+}
 
+func TestClient_SearchMedia_DistanceError2(t *testing.T) {
+	client := CreateClient(t)
+	_, err := client.SearchMedia("0", "0", Parameters{
+		"distance": "5001",
+	})
+
+	if err != nil {
+		t.Log("Success distance cannot be higher 5000")
+	} else {
+		t.Fatal("Error, distance parameter it is higher 5000 and request was sended anyway.")
+	}
+}
+
+func TestClient_GetRecentMediaTaggedByTagName(t *testing.T) {
+	FatalIfEmptyString(tagname, "tagname cannot be empty.", t)
+	client := CreateClient(t)
+	media_arr, err := client.GetRecentMediaTaggedByTagName(tagname, nil)
+	PanicIfError(err, t)
+	IterateMedia(media_arr, t)
+}
+
+func TestClient_GetRecentMediaTaggedByTagName2(t *testing.T) {
+	FatalIfEmptyString(tagname, "tagname cannot be empty.", t)
+	client := CreateClient(t)
+	media_arr, err := client.GetRecentMediaTaggedByTagName(tagname, Parameters{
+		"count": "1",
+	})
+	PanicIfError(err, t)
 	IterateMedia(media_arr, t)
 }
 
 func TestClient_GetRecentMediaLocation(t *testing.T) {
+	FatalIfEmptyString(location_id, "Location id cannot be empty.", t)
 	client := CreateClient(t)
-	media_arr, err := client.GetRecentMediaLocation("1898148680457787")
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	media_arr, err := client.GetRecentMediaLocation(location_id, nil)
+	PanicIfError(err, t)
 	IterateMedia(media_arr, t)
 }
+

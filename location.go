@@ -2,7 +2,18 @@ package gostagram
 
 import (
 	"fmt"
+	"errors"
+	"strconv"
+
 	"github.com/mitchellh/mapstructure"
+)
+
+var (
+	maxLocationDistanceError = errors.New("Maximun distance is 750m.")
+)
+
+const (
+	maxLocationDistance = 750
 )
 
 type Location struct {
@@ -12,7 +23,10 @@ type Location struct {
 	Longitude float64
 }
 
-func (c *Client) GetLocationById(location_id string) (*Location, error) {
+// Get an especific location by a respective id,
+// for more information about it, go to
+// https://www.instagram.com/developer/endpoints/locations/#get_locations
+func (c Client) GetLocationById(location_id string) (*Location, error) {
 	tmp, _, err := c.get(fmt.Sprintf("%slocations/%s?access_token=%s", apiUrl, location_id, c.access_token))
 	if err != nil {
 		return nil, err
@@ -27,20 +41,34 @@ func (c *Client) GetLocationById(location_id string) (*Location, error) {
 	return &location, nil
 }
 
-func GetLocationOfRecentMedia(max_id, min_id int, access_token string)  {
+// Search locations by its latitude, longitude, distance and facebook places,
+// for more information about it, go to
+// https://www.instagram.com/developer/endpoints/locations/#get_locations_search
+func (c Client) SearchLocations(latitude, longitude string, params Parameters) ([]*Location, error) {
+	tmp1 := "%slocations/search?lat=%s&lng=%s&access_token=%s"
+	if params != nil {
+		if params["distance"] != "" {
+			distance, err := strconv.Atoi(params["distance"])
+			if err != nil {
+				return nil, err
+			}
 
-}
+			if distance > maxLocationDistance {
+				return nil, maxLocationDistanceError
+			}
 
-func (c *Client) SearchLocations(latitude, longitude, distance, facebook_places_id string) ([]*Location, error) {
-	tmp, _, err := c.get(fmt.Sprintf("%slocations/search?lat=%s&lng=%s&distance=%s&facebook_places_id=%s&access_token=%s",
-		apiUrl, latitude, longitude, distance, facebook_places_id, c.access_token))
+			tmp1 += fmt.Sprintf("&distance=%d", distance)
+		}
+	}
+
+	tmp, _, err := c.get(fmt.Sprintf(tmp1,
+		apiUrl, latitude, longitude, c.access_token))
 
 	if err != nil {
 		return nil, err
 	}
 
 	tmpLocations := (*tmp).([]interface{})
-
 	var locations []*Location
 	for _, tmplocation := range tmpLocations {
 		var location Location

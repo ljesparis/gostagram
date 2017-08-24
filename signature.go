@@ -7,12 +7,12 @@ import (
 	"fmt"
 )
 
-func (c *Client) generateSignature(endpoint string, params Params) (string, error) {
+// generate a signature to send it to secure a request.
+func (c Client) generateSignature(endpoint string, params Parameters) (string, error) {
 	sig := endpoint
 	for key, val := range params {
 		sig += fmt.Sprintf("|%s=%s", key, val)
 	}
-
 
 	tmp := hmac.New(sha256.New, []byte(c.clientSecret))
 	_, err := tmp.Write([]byte(sig))

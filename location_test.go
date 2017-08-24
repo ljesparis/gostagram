@@ -2,14 +2,17 @@ package gostagram
 
 import "testing"
 
+var (
+	location_id        = ""
+	latitude           = ""
+	longitude          = ""
+)
+
 func TestClient_GetLocationById(t *testing.T) {
+	FatalIfEmptyString(location_id, "Location id cannot be empty.", t)
 	client := CreateClient(t)
-	tmp, err := client.GetLocationById("1898148680457787")
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	tmp, err := client.GetLocationById(location_id)
+	PanicIfError(err, t)
 	t.Log(tmp.Name)
 	t.Log(tmp.Id)
 	t.Log(tmp.Longitude)
@@ -17,13 +20,11 @@ func TestClient_GetLocationById(t *testing.T) {
 }
 
 func TestClient_SearchLocations(t *testing.T) {
+	FatalIfEmptyString(latitude, "latitude cannot be empty.", t)
+	FatalIfEmptyString(longitude, "longitude cannot be empty.", t)
 	client := CreateClient(t)
-	tmp, err := client.SearchLocations("12.12", "23.1", "12312", "12312")
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	tmp, err := client.SearchLocations(latitude, longitude, nil)
+	PanicIfError(err, t)
 	for _, location := range tmp {
 		t.Log("------------------ Start Location ------------------")
 		t.Log(location.Name)
@@ -32,5 +33,34 @@ func TestClient_SearchLocations(t *testing.T) {
 		t.Log(location.Latitude)
 		t.Log("------------------ End Location ------------------")
 	}
+}
 
+func TestClient_SearchLocations_DistanceError2(t *testing.T) {
+	FatalIfEmptyString(latitude, "latitude cannot be empty.", t)
+	FatalIfEmptyString(longitude, "longitude cannot be empty.", t)
+	client := CreateClient(t)
+	_, err := client.SearchLocations(latitude, longitude, Parameters{
+		"distance": "asd",
+	})
+
+	if err != nil {
+		t.Log("Success distance most be a digit")
+	} else {
+		t.Fatal("Error, distance parameter it is not a digit and request was sended anyway.")
+	}
+}
+
+func TestClient_SearchLocations_DistanceError(t *testing.T) {
+	FatalIfEmptyString(latitude, "latitude cannot be empty.", t)
+	FatalIfEmptyString(longitude, "longitude cannot be empty.", t)
+	client := CreateClient(t)
+	_, err := client.SearchLocations(latitude, longitude, Parameters{
+		"distance": "800",
+	})
+
+	if err != nil {
+		t.Log("Success distance cannot be higher to 750")
+	} else {
+		t.Fatal("Error, distance parameter it is higher to 750 and request was sended anyway.")
+	}
 }
