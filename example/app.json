@@ -1,0 +1,14 @@
+{
+  "name": "Start on Heroku: Go",
+  "description": "Go Gostagram example App.",
+  "keywords": [
+    "gostagram",
+    "go",
+    "golang",
+    "instagram"
+  ],
+  "image": "heroku/go:1.8",
+  "mount_dir": "src/github.com/ljesparis/example",
+  "website": "http://github.com/ljesparis/example",
+  "repository": "http://github.com/ljesparis/example"
+}

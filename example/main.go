@@ -1,5 +1,3 @@
-// +build
-
 package main
 
 import (
@@ -51,8 +49,9 @@ var (
 // SETTINGS.
 var (
 	// base
-	port = os.Getenv("PORT")
-	host = os.Getenv("HOST")
+	port   = os.Getenv("PORT")
+	host   = os.Getenv("HOST")
+	scheme = os.Getenv("SCHEME")
 
 	// templates dir
 	templates_dir = os.Getenv("PWD") + "/templates"
@@ -65,7 +64,7 @@ var (
 	sig_secret   = "" // can be anything you want.
 	clientId     = ""
 	clientSecret = ""
-	redirectUrl  = "http://" + host + ":" + port + oauth2Route
+	redirectUrl  = scheme + "://" + host + oauth2Route
 	scopes       = []string{
 		"basic",
 		"comments",
@@ -625,10 +624,16 @@ func CommonResponseHeaders(next http.Handler) http.HandlerFunc {
 //
 
 func main() {
-	if len(port) == 0 {
-		panic("PORT environment variable not set.")
-	} else if len(host) == 0 {
-		panic("HOST environment variable not set.")
+	if port == "" {
+		port = "8080"
+	}
+
+	if host == "" {
+		host = "gostagram.herokuapp.com"
+	}
+
+	if scheme == "" {
+		scheme = "https"
 	}
 
 	mux := http.NewServeMux()
@@ -641,7 +646,7 @@ func main() {
 	// add staticfiles directory.
 	mux.Handle(static_url, http.StripPrefix(static_url, http.FileServer(http.Dir(static_dir))))
 
-	http.ListenAndServe(host+":"+port,
+	http.ListenAndServe(fmt.Sprintf(":%s", port),
 		Logger(Recover(CommonResponseHeaders(AuthUser(mux)))),
 	)
 }
